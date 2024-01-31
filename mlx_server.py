@@ -1,41 +1,36 @@
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from mlx_lm import load, generate
 
-app = Flask(__name__)
+app = FastAPI()
 
 # Load the model when the server starts
 tokenizer_config = {"trust_remote_code": True}
 model, tokenizer = load("mlx-community/stablelm-2-zephyr-1_6b-4bit", tokenizer_config=tokenizer_config)
 
-@app.route('/v1/chat/completions', methods=['POST'])
-def chat_completions():
-    data = request.get_json()
-
-    # Extract messages from the JSON request and construct the prompt
+@app.post('/v1/chat/completions')
+async def chat_completions(request: Request):
+    data = await request.json()
     messages = data.get('messages', [])
     max_tokens = data.get('max_tokens', 500)
 
-    prompt = ""
-    for message in messages:
-        role = message.get('role')
-        content = message.get('content')
-        prompt += f"{role}: {content}\n"
+    if not messages:
+        raise HTTPException(status_code=400, detail="No messages provided")
 
-    # Check if a prompt was constructed
-    if prompt:
-        response_text = generate(model, tokenizer, prompt=prompt, max_tokens=max_tokens)
-        # Format the response to mimic OpenAI's API structure
-        response = {
-            "choices": [{
-                "message": {
-                    "role": "assistant",
-                    "content": response_text
-                }
-            }]
-        }
-        return jsonify(response)
-    else:
-        return jsonify({'error': 'No messages provided'}), 400
+    prompt = "\n".join([f"{message['role']}: {message['content']}" for message in messages])
+    # Assuming generate function does not inherently support streaming
+    response_text = generate(model, tokenizer, prompt=prompt, max_tokens=max_tokens, verbose=True)
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=1234)
+    response = {
+        "choices": [{
+            "message": {
+                "role": "assistant",
+                "content": response_text
+            }
+        }]
+    }
+    return JSONResponse(response)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=1234)
