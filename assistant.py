@@ -10,7 +10,7 @@ history = [
 
 while True:
     completion = client.chat.completions.create(
-        model="local-model",  # this field is currently unused
+        model="mlx-community/stablelm-2-zephyr-1_6b-4bit",  # Use 'model' to specify the model identifier
         messages=history,
         max_tokens = 500
     )
