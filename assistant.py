@@ -12,6 +12,7 @@ while True:
     completion = client.chat.completions.create(
         model="local-model",  # this field is currently unused
         messages=history,
+        max_tokens = 500
     )
 
     # Accessing the message content as an object property

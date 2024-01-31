@@ -8,7 +8,8 @@ completion = client.chat.completions.create(
     messages=[
         {"role": "system", "content": "Always answer in rhymes."},
         {"role": "user", "content": "Introduce yourself."}
-    ]
+    ],
+    max_tokens = 500
 )
 
 # Accessing the message content as an object property
